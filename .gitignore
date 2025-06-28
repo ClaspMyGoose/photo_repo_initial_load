@@ -3,6 +3,12 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Mine 
+.venv/
+todo.txt
+sample_data/ 
+.env 
+
 # C extensions
 *.so
 
