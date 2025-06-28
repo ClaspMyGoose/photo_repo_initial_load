@@ -8,6 +8,8 @@ __pycache__/
 todo.txt
 sample_data/ 
 .env 
+sa/
+.DS_Store
 
 # C extensions
 *.so
