@@ -10,6 +10,8 @@ sample_data/
 .env 
 sa/
 .DS_Store
+logs/
+pipeline.log
 
 # C extensions
 *.so
