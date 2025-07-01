@@ -7,7 +7,23 @@ import pandas as pd
 
 def get_csv_dataframe(csv_file_path): 
 
-    df = pd.read_csv(csv_file_path, dtype=str, sep=',', header=0)
+    df = pd.read_csv(
+        csv_file_path, 
+        # dtype={
+        #     'pic_name': str,
+        #     'description': str,
+        #     'location': str,
+        #     'tags': str,
+        #     'start_date': 'int64',
+        #     'end_date': 'int64'
+
+        # },  
+        dtype=str,
+        #parse_dates=['start_date', 'end_date'],
+        #date_format='%Y/%m/%d',
+        sep=',', 
+        header=0
+    )
     return df 
 
 def compare_images_and_csv(ref_map: dict, csv_dataframe: pd.DataFrame): 
@@ -35,14 +51,18 @@ def compare_images_and_csv(ref_map: dict, csv_dataframe: pd.DataFrame):
         return (1, (csv_record_count, image_folder_record_count, len(csv_only), len(folder_only), len(matched)))
 
 
-def process_csv(ref_map, filepath):
-    # this will be a call to Big Query, come back to this 
+def transform_dataframe(ref_map, df):
+   
+    df = df.copy()
+    df['filename'] = df['pic_name'].map(lambda x: ref_map.get(x, 'none')[2][7:])
+    df['cloud_storage_url'] = df['pic_name'].map(lambda x: ref_map.get(x, 'none')[1])
+    df['tags'] = df['tags'].str.split(',').apply(lambda x: [item.strip() for item in x])
+    df['image_width'] = None
+    df['image_height'] = None
+    df['file_size_bytes'] = None
+    df['start_date'] = pd.to_datetime(df['start_date'], format='%Y/%m/%d', errors='raise')
+    df['end_date'] =  pd.to_datetime(df['end_date'], format='%Y/%m/%d', errors='raise')
 
-    pass 
 
-    # TODO get csv count 
-    # TODO get dict length 
 
-    # TODO do my set operations 
-
-    # output result and error code 
+    return df
