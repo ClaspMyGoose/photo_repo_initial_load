@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-
+import logging
 from app import generate_file_names
 from app import logger as log
 from app import metadata_pipe as m_p
@@ -17,7 +17,9 @@ def main():
     load_dotenv()
 
     logs_folder = home / os.getenv('LOGS_FOLDER')
-    log.setup_file_logging(logs_folder)
+    #log.setup_file_logging(logs_folder)
+    log.setup_logger('logs')
+    logger = logging.getLogger('pipeline-logger')
 
     csv_filepath = home / os.getenv('CSV_FILEPATH')
     image_folder = home / os.getenv('IMAGE_FOLDER')
@@ -32,10 +34,10 @@ def main():
 
     if not reference_mapping:
         print('Inputs failed validation. See logs. Exiting without inserting data')
-        log.logging.error('Reference Mapping Creation Failure. Check for duplicate filenames with different extensions in image folder')
+        logger.error('Reference Mapping Creation Failure. Check for duplicate filenames with different extensions in image folder')
         return 
     
-    log.logging.info('Reference Mapping Generated')
+    logger.info('Reference Mapping Generated')
 
     # * validation between image folder and supplied metadata csv 
     metadata_DF = m_p.get_csv_dataframe(csv_filepath)
@@ -44,19 +46,19 @@ def main():
 
     if process_code == 0:
         print('Inputs failed validation. See logs. Exiting without inserting data')
-        log.logging.error(f'Validation Failed.\nCSV Count: {csv_count}\nImage Count: {image_count}\nCSV Overflow: {csv_overflow}\nImage Overflow: {image_overflow} Match Count: {match_count}')
+        logger.error(f'Validation Failed.\nCSV Count: {csv_count}\nImage Count: {image_count}\nCSV Overflow: {csv_overflow}\nImage Overflow: {image_overflow} Match Count: {match_count}')
         return 
     
     if process_code == 1:
-        log.logging.info(f'Validation Succeeded.\nCSV Count: {csv_count}\nImage Count: {image_count}\nCSV Overflow: {csv_overflow}\nImage Overflow: {image_overflow} Match Count: {match_count}')
+        logger.info(f'Validation Succeeded. CSV Overflow: {csv_overflow} -- Image Overflow: {image_overflow} -- Match Count: {match_count}')
 
     # * upload images once validation succeeds 
     uploader = image_uploader.ImageUploader(bucket_name, reference_mapping, project_id)
 
-    uploaded_files = uploader.upload_images_from_folder(image_folder)
+    uploaded_cnt, uploaded_files = uploader.upload_images_from_folder(image_folder)
 
-    print(f'Uploaded {uploaded_files} image files to cloud storage.')
-    log.logging.info(f'Uploaded {uploaded_files} image files to cloud storage.')
+    print(f'Uploaded {uploaded_cnt} image files to cloud storage.')
+    logger.info(f'Uploaded {uploaded_cnt} image files to cloud storage.')
 
     return 
 
@@ -70,7 +72,7 @@ def main():
     #     print(idx, val, reference_mapping[val])
 
 
-log.logging.info('Good thing happened')
+
 
 
 

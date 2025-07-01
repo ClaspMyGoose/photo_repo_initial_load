@@ -11,7 +11,8 @@ sample_data/
 sa/
 .DS_Store
 logs/
-pipeline.log
+*_pipeline.log
+
 
 # C extensions
 *.so

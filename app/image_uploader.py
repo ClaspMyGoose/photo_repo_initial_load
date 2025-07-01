@@ -10,8 +10,8 @@ class ImageUploader:
         self.bucket_name = bucket_name
         self.client = storage.Client(project=project_id)
         self.bucket = self.client.bucket(bucket_name)
-        self.logger = logging.getLogger('pipeline.log')
         self.ref_map = ref_map
+        self.logger = logging.getLogger('pipeline-logger')
     
     def upload_image(self, local_file_path, destination_blob_name):
         """
