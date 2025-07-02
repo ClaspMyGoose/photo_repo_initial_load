@@ -62,6 +62,7 @@ class ImageUploader:
                 image_name_strip_ext = image_name.split('.')[0]
                 ref_entry = self.ref_map.get(image_name_strip_ext)
 
+                # ! skip files that weren't pre-scanned 
                 if not ref_entry:
                     self.logger.info(f'Did not process file: {image_name}')
                     continue 
