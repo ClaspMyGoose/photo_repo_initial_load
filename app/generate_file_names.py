@@ -35,7 +35,7 @@ def generate_reference_mapping(src_folder: str, bucket_name: str, prefix: str) -
         try:
             image_name = Path(image).name 
             stripped_filename = strip_extension(image_name)
-            unique_blob_name = generate_unique_blob_name(image_name, 'images')
+            unique_blob_name = generate_unique_blob_name(image_name, prefix)
             cloud_uri = generate_cloud_uri(bucket_name, unique_blob_name)
             reference_mapping[stripped_filename] = [image_name, cloud_uri, unique_blob_name]
         except KeyError as e:

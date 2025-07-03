@@ -5,8 +5,10 @@ import pytest
 import pandas as pd
 import tempfile
 import os
+from dotenv import load_dotenv
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+from . import generate_file_names
 
 # TODO define a couple tests 
 # class TestDataValidation:
@@ -169,47 +171,81 @@ from unittest.mock import patch, MagicMock
 # TODO actual testing here. 
 class TestPipeline:
     """Test the complete pipeline flow"""
-    
-    def test_pipeline_with_sample_data(self):
-        """Test complete pipeline with sample data"""
-        # Create sample DataFrame
-        df = pd.DataFrame({
-            'filename': ['photo1.jpeg', 'photo2.jpg'],
-            'upload_timestamp': ['photo1.jpeg', 'photo2.jpg'],
-            'description': ['Test photo 1', 'Test photo 2'],
-            'location': ['photo1.jpeg', 'photo2.jpg'],
-            'tags': ['photo1.jpeg', 'photo2.jpg'],
-            'start_date': ['2025/1/1', '2025/1/2'],
-            'end_date': ['2025/1/1', '2025/1/2'],
-        })
 
-        df['image_width'] = None
-        df['image_height'] = None
-        df['file_size_bytes'] = None
-        df['upload_timestamp'] = pd.Timestamp.now()
+
+    # def test_pipeline_with_sample_data(self):
+    #     """Test complete pipeline with sample data"""
+    #     # Create sample DataFrame
+    #     df = pd.DataFrame({
+    #         'filename': ['photo1.jpeg', 'photo2.jpg'],
+    #         'upload_timestamp': ['photo1.jpeg', 'photo2.jpg'],
+    #         'description': ['Test photo 1', 'Test photo 2'],
+    #         'location': ['photo1.jpeg', 'photo2.jpg'],
+    #         'tags': ['photo1.jpeg', 'photo2.jpg'],
+    #         'start_date': ['2025/1/1', '2025/1/2'],
+    #         'end_date': ['2025/1/1', '2025/1/2'],
+    #     })
+
+    #     df['image_width'] = None
+    #     df['image_height'] = None
+    #     df['file_size_bytes'] = None
+    #     df['upload_timestamp'] = pd.Timestamp.now()
 
 
         
 
 
-        # Add cloud storage URLs
-        df['cloud_storage_url'] = df['filename'].apply(
-            lambda x: f"gs://test-bucket/images/{x}"
-        )
+    #     # Add cloud storage URLs
+    #     df['cloud_storage_url'] = df['filename'].apply(
+    #         lambda x: f"gs://test-bucket/images/{x}"
+    #     )
         
-        # Add timestamp
-        df['upload_timestamp'] = pd.Timestamp.now()
+    #     # Add timestamp
+    #     df['upload_timestamp'] = pd.Timestamp.now()
         
-        # Validate final structure
-        assert len(df) == 2
-        assert 'cloud_storage_url' in df.columns
-        assert 'upload_timestamp' in df.columns
-        assert df['cloud_storage_url'].str.startswith('gs://').all()
+    #     # Validate final structure
+    #     assert len(df) == 2
+    #     assert 'cloud_storage_url' in df.columns
+    #     assert 'upload_timestamp' in df.columns
+    #     assert df['cloud_storage_url'].str.startswith('gs://').all()
 
+
+    # TODO this is working but we should split it up into 1 fx() per test 
     def test_outputs_with_good_data(self):
-        pass
         # ! my sample data works here 
-        # * generate file names 
+        # * generate file names
+        home = Path.home() 
+        load_dotenv()
+        good_image_folder = home / os.getenv('IMAGE_FOLDER')
+
+        
+        reference_mapping = generate_file_names.generate_reference_mapping(good_image_folder, load_dotenv('CLOUD_STORAGE_BUCKET'), prefix='images')
+        
+        validation_arr = []
+        for image in Path.iterdir(good_image_folder):
+            strip_ext = ''
+            if image.is_file():
+                print(image.name)
+                match image.name[-4:]:
+                    case '.jpg':
+                        strip_ext = image.name[:-4]
+                    case 'jpeg':
+                        strip_ext = image.name[:-5]
+                    case _:
+                        continue 
+                validation_arr.append(strip_ext)
+            else:
+                continue 
+
+        returned_items = reference_mapping.keys()        
+        assert len(reference_mapping) == len(validation_arr)
+
+        for image_name in validation_arr:
+            assert image_name in returned_items
+            assert isinstance(reference_mapping.get(image_name),list)
+            assert len(reference_mapping.get(image_name)) == 3
+
+
         # generate_reference_mapping(src_folder: str, bucket_name: str, prefix: str)
             # TODO when given good input, we get a dict back with expected keys, each k/v pair containing an array of length 3 
         # * image uploader 
@@ -219,12 +255,16 @@ class TestPipeline:
             # TODO with good input, returns a count and a dict. count should match dict items whose value <> 'Failed to upload'
             # TODO with good input, our count minus "Failed to upload" should equal length of our reference mapping 
         # * metadata_transform 
-        # get_csv_dataframe
         # compare_images_and_csv
+        # TODO with good input, returns the object in the shape we're expecting 
+            # this one is simple 
         # transform_dataframe
+        # TODO with good input, return the dataframe with the additional cols we're expecting 
         # * metadata_uploader 
-        # upload_dataframe
-        # upload_metadata_to_BigQuery
+        # upload_dataframe - # TODO need to use patch and magicMock here 
+            # TODO with good input and connection, returns True 
+        # upload_metadata_to_BigQuery - # TODO need to use patch and magicMock her
+            # TODO with good input, return the number of rows inserted 
         # * app 
         # main 
 
@@ -241,12 +281,15 @@ class TestPipeline:
             # TODO with bad input, returns a count and a dict. count should match dict items whose value <> 'Failed to upload' (however many good items)
             # TODO with bad input, our count minus "Failed to upload" should equal the # of our good items 
         # * metadata_transform 
-        # get_csv_dataframe
         # compare_images_and_csv
-        # transform_dataframe
+            # TODO with bad input, returns the object in the error shape we're expecting 
+            # we have a couple bad scenarios, flesh out each one 
         # * metadata_uploader 
-        # upload_dataframe
-        # upload_metadata_to_BigQuery
+        # upload_dataframe - # TODO need to use patch and magicMock here 
+            # TODO with bad input or connection, raises error 
+        # upload_metadata_to_BigQuery - # TODO need to use patch and magicMock her
+            # TODO with bad input or connection, make sure we are catching the error and skipping the return 
+            # TODO other wise need to modify code slightly 
         # * app 
         # main 
 
