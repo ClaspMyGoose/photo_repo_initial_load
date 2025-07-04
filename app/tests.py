@@ -8,7 +8,11 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+# ! works when calling pytest from cmd line 
 from . import generate_file_names
+from . import metadata_transform
+# ! works when running via VS Code or normal python invocation 
+#import generate_file_names
 
 # TODO define a couple tests 
 # class TestDataValidation:
@@ -210,10 +214,11 @@ class TestPipeline:
     #     assert df['cloud_storage_url'].str.startswith('gs://').all()
 
 
-    # TODO this is working but we should split it up into 1 fx() per test 
-    def test_outputs_with_good_data(self):
-        # ! my sample data works here 
-        # * generate file names
+    
+    def test_good_generate_file_names_generate_reference_mapping(self):
+        
+        # generate_reference_mapping(src_folder: str, bucket_name: str, prefix: str)
+        # when given good input, we get a dict back with expected keys, each k/v pair containing an array of length 3 
         home = Path.home() 
         load_dotenv()
         good_image_folder = home / os.getenv('IMAGE_FOLDER')
@@ -245,31 +250,76 @@ class TestPipeline:
             assert isinstance(reference_mapping.get(image_name),list)
             assert len(reference_mapping.get(image_name)) == 3
 
+    # def test_good_image_uploader_upload_image(self):
+    #     pass
+    #     # * image uploader 
+    #     # upload_image - # TODO need to use patch and magicMock here 
+    #         # TODO with good input returns a string that matches our pattern 
+    # def test_good_image_uploader_upload_images_from_folder(self):
+    #     pass
+    #     # upload_images_from_folder - # TODO need to use patch and magicMock here 
+    #         # TODO with good input, returns a count and a dict. count should match dict items whose value <> 'Failed to upload'
+    #         # TODO with good input, our count minus "Failed to upload" should equal length of our reference mapping
+    def test_good_metadata_transform_compare_images_and_csv(self):
+        
+        home = Path.home() 
+        load_dotenv()
+        good_image_folder = home / os.getenv('IMAGE_FOLDER')
+        good_csv_file = home / os.getenv('CSV_FILEPATH')
 
-        # generate_reference_mapping(src_folder: str, bucket_name: str, prefix: str)
-            # TODO when given good input, we get a dict back with expected keys, each k/v pair containing an array of length 3 
-        # * image uploader 
-        # upload_image - # TODO need to use patch and magicMock here 
-            # TODO with good input returns a string that matches our pattern 
-        # upload_images_from_folder - # TODO need to use patch and magicMock here 
-            # TODO with good input, returns a count and a dict. count should match dict items whose value <> 'Failed to upload'
-            # TODO with good input, our count minus "Failed to upload" should equal length of our reference mapping 
-        # * metadata_transform 
-        # compare_images_and_csv
-        # TODO with good input, returns the object in the shape we're expecting 
-            # this one is simple 
-        # transform_dataframe
-        # TODO with good input, return the dataframe with the additional cols we're expecting 
-        # * metadata_uploader 
-        # upload_dataframe - # TODO need to use patch and magicMock here 
-            # TODO with good input and connection, returns True 
-        # upload_metadata_to_BigQuery - # TODO need to use patch and magicMock her
-            # TODO with good input, return the number of rows inserted 
-        # * app 
-        # main 
+        reference_mapping = generate_file_names.generate_reference_mapping(good_image_folder, load_dotenv('CLOUD_STORAGE_BUCKET'), prefix='images')
+        csv_df = metadata_transform.get_csv_dataframe(good_csv_file)
 
-    def test_outputs_with_bad_data(self):
-        pass 
+
+        result_tuple = metadata_transform.compare_images_and_csv(reference_mapping, csv_df)
+        assert result_tuple
+
+        result_code, (csv_records, image_records, csv_overflow, image_overflow, matched_cnt) = result_tuple
+        assert result_code == 1 
+        assert csv_records == image_records
+        assert csv_records == matched_cnt
+        assert csv_overflow == 0
+        assert image_overflow == 0 
+        
+
+    #     # * metadata_transform 
+    #     # compare_images_and_csv
+    #     # TODO with good input, returns the object in the shape we're expecting 
+    #         # this one is simple 
+    # def test_good_metadata_transform_transform_dataframe(self):
+    #     pass
+    #     # transform_dataframe
+    #     # TODO with good input, return the dataframe with the additional cols we're expecting 
+    #     # * metadata_uploader 
+    # def test_good_metadata_uploader_upload_dataframe(self):
+    #     pass
+    #     # upload_dataframe - # TODO need to use patch and magicMock here 
+    #         # TODO with good input and connection, returns True 
+    # def test_good_metadata_uploader_upload_metadata_to_BigQuery(self):
+    #     pass
+    #     # upload_metadata_to_BigQuery - # TODO need to use patch and magicMock her
+    #         # TODO with good input, return the number of rows inserted 
+    #     # * app 
+    #     # main 
+
+    def test_bad_generate_file_names_generate_reference_mapping(self):
+
+        home = Path.home() 
+        load_dotenv()
+        # TODO change this 
+        bad_image_folder = home / os.getenv('BAD_IMAGE_FOLDER')
+
+        
+        reference_mapping = generate_file_names.generate_reference_mapping(bad_image_folder, load_dotenv('CLOUD_STORAGE_BUCKET'), prefix='images')
+        
+        assert isinstance(reference_mapping, dict)
+        assert len(reference_mapping) == 0
+        assert not reference_mapping
+
+
+
+    # def test_outputs_with_bad_data(self):
+    #     pass 
         # TODO need to copy sample photos, fuck up the csv, maybe remove some photos 
         # * generate file names 
         # generate_reference_mapping
@@ -280,10 +330,40 @@ class TestPipeline:
         # upload_images_from_folder # TODO need to use patch and magicMock here 
             # TODO with bad input, returns a count and a dict. count should match dict items whose value <> 'Failed to upload' (however many good items)
             # TODO with bad input, our count minus "Failed to upload" should equal the # of our good items 
-        # * metadata_transform 
-        # compare_images_and_csv
-            # TODO with bad input, returns the object in the error shape we're expecting 
+    def test_bad_metadata_transform_compare_images_and_csv(self):
+        
+        home = Path.home() 
+        load_dotenv()
+        good_image_folder = home / os.getenv('IMAGE_FOLDER')
+        good_csv_file = home / os.getenv('CSV_FILEPATH')
+
+        reference_mapping = generate_file_names.generate_reference_mapping(good_image_folder, load_dotenv('CLOUD_STORAGE_BUCKET'), prefix='images')
+        csv_df = metadata_transform.get_csv_dataframe(good_csv_file)
+
+        # TODO scenario 1 ref_map overflows csv 
+        # TODO scenario 2 csv overflows ref_map 
+        # TODO scenario 3 counts match but different set member 
+
+
+        # result_tuple = metadata_transform.compare_images_and_csv(reference_mapping, csv_df)
+        # assert result_tuple
+
+        # result_code, (csv_records, image_records, csv_overflow, image_overflow, matched_cnt) = result_tuple
+        # assert result_code == 1 
+        # assert csv_records == image_records
+        # assert csv_records == matched_cnt
+        # assert csv_overflow == 0
+        # assert image_overflow == 0 
+
+
+
+
+        # TODO with bad input, returns the object in the error shape we're expecting 
             # we have a couple bad scenarios, flesh out each one 
+
+
+
+
         # * metadata_uploader 
         # upload_dataframe - # TODO need to use patch and magicMock here 
             # TODO with bad input or connection, raises error 
@@ -292,6 +372,11 @@ class TestPipeline:
             # TODO other wise need to modify code slightly 
         # * app 
         # main 
+
+# def main():
+#     testClass = TestPipeline()
+#     testClass.test_bad_generate_file_names_generate_reference_mapping()
+
 
 if __name__ == "__main__":
     # Run tests with: python test_pipeline.py
