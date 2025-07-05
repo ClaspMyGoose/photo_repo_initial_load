@@ -11,7 +11,7 @@ sample_data/
 sa/
 .DS_Store
 logs/
-
+bad_sample_data/
 
 
 # C extensions

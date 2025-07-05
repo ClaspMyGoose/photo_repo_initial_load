@@ -32,14 +32,14 @@ def generate_reference_mapping(src_folder: str, bucket_name: str, prefix: str) -
     jpeg_files = list(src_folder.glob("*.jpg")) + list(src_folder.glob("*.jpeg"))
 
     for image in jpeg_files:
-        try:
-            image_name = Path(image).name 
-            stripped_filename = strip_extension(image_name)
-            unique_blob_name = generate_unique_blob_name(image_name, 'images')
-            cloud_uri = generate_cloud_uri(bucket_name, unique_blob_name)
-            reference_mapping[stripped_filename] = [image_name, cloud_uri, unique_blob_name]
-        except KeyError as e:
+        image_name = Path(image).name 
+        stripped_filename = strip_extension(image_name)
+        unique_blob_name = generate_unique_blob_name(image_name, prefix)
+        cloud_uri = generate_cloud_uri(bucket_name, unique_blob_name)
+        dict_ref = reference_mapping.get(stripped_filename)
+        if dict_ref:
             print('Check image folder for duplicate filenames with different extensions - i.e. Photo001.jpg and Photo001.jpeg')
-            return {} 
-
+            return {}
+        reference_mapping[stripped_filename] = [image_name, cloud_uri, unique_blob_name]
+        
     return reference_mapping

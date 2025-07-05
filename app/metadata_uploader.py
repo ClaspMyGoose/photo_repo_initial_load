@@ -176,6 +176,8 @@ def upload_metadata_to_BigQuery(project_id, dataset_id, table_name, metadata_df)
         table = uploader.client.get_table(table_id)
         logging.info(f"Table now contains {table.num_rows} total rows")
     
+    # TODO does this need to change? nest underneath if success and have an else condition? 
+    # TODO if there is an error during upload_dataframe, do we skip this return? if so it's probably fine as is 
     return len(metadata_df)
 
 

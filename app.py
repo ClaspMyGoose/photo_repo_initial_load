@@ -34,7 +34,7 @@ def main():
     table_name = 'photo_metadata'
 
     # * generate reference mapping based on image folder 
-    reference_mapping = generate_file_names.generate_reference_mapping(image_folder, bucket_name='photo_repo_storage_bucket', prefix='images')
+    reference_mapping = generate_file_names.generate_reference_mapping(image_folder, bucket_name, prefix='images')
 
     if not reference_mapping:
         print('Inputs failed validation. See logs. Exiting without inserting data')
